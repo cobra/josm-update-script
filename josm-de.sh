@@ -22,7 +22,7 @@
 #   - übergibt alle Argumente an JOSM, nützlich um einen oder mehrere Dateien direkt in JOSM zu öffnen
 #   - setzt Umgebungsvariablen, übergibt die passenden Parameter an Java und sorgt dafür, dass alsa benutzt wird
 #
-# Konfiguration (unter diesem Kommentarblock):
+# Konfiguration (in der Datei josm-de.conf):
 #   - Verzeichnis für die gespeicherten josm-Versionen anpassen, falls gewünscht
 #   - josm-Variante wählen (latest/tested)
 #   - Anzahl der gesicherten Versionen anpassen, falls gewünscht
@@ -31,7 +31,7 @@
 #   - Wer andere Parameter für java oder josm ändern möchte, kann das in der letzten Zeile tun
 #
 # Benutzung:
-#   josm [-lr] [revision] [DATEI(EN)]
+#   josm-de.sh [-lr] [revision] [DATEI(EN)]
 #
 #   Optionem:
 #   -l	alle gespeicherten josm-Versionen ausgeben und beenden
@@ -46,20 +46,8 @@
 #   - add some help (e.g. via --help)
 #
  
-# Wo soll das josm-archiv gespeichert werden?
-dir=~/bin/josm-archive
-# Welche Variante von josm soll genutzt werden? "tested" ist die neueste mehr oder weniger stabile Version, "latest" kann teilweise schwere Fehler haben, daher ist hier Vorsicht angesagt!
-version=tested
-# Wie viele alte Versionen sollen gesichert werden?
-numbackup=5
-# Zeit in Sekunden, die wget bis zu einem erneuten Versuch bzw. Abbruch warten soll; bei langsamen Verbindungen diesen Wert erhöhen
-timeout=10
-# Maximale Anzahl an Versuchen, eine Verbindung herzustellen
-retries=2
-# Falls compiz eingesetzt wird, muss die nächste Zeile auskommentiert werden
-#export AWT_TOOLKIT=MToolkit
-# Wie viel Speicher soll für josm maximal zur Verfügung stehen?
-mem=1024M
+# Konfigurationsdatei einbinden
+. josm-de.conf
  
 cd $dir
  

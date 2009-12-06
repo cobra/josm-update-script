@@ -22,7 +22,7 @@
 #   - passes all arguments to josm - you can pass files to open with josm, e.g. 'josm trace0*.gpx trace10.gpx'
 #   - sets environment variables, passes correct parameters to java and use alsa instead of oss
 #
-# configuration (just below these comments):
+# configuration (in file josm.conf):
 #   - change archive-directory if desired
 #   - adjust number of desired backups
 #   - do you use compiz? Then uncomment that line.
@@ -30,7 +30,7 @@
 #   - if you want to change or add some parameters for java look at the last line
 #
 # usage:
-#   josm [-lr] [revision] [FILE(S)]
+#   josm.sh [-lr] [revision] [FILE(S)]
 #
 #   Options:
 #   -l	lists all saved versions of josm and exits
@@ -43,20 +43,8 @@
 #   - add some help (e.g. via --help)
 #
 
-# where should this script save josm-latest.jar to?
-dir=~/bin/josm-archive
-# which version of josm do you want to use? "tested" will work for sure, "latest" may have serious bugs, be careful when using "latest"
-version=latest
-# how many old versions should be backed up?
-numbackup=15
-# timeout for wget in seconds; increase when using a slower connection
-timeout=5
-# how often should wget retry when a timeout occured?
-retries=2
-# fix for use with compiz, uncomment next line if you *do* use compiz
-#export AWT_TOOLKIT=MToolkit
-# how many memory should java assign to josm?
-mem=1024M
+# include configuration file
+. josm.conf
 
 cd $dir
 
