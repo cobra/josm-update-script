@@ -127,7 +127,7 @@ if [ $override_rev -eq 1 ]
         else
         if [ $latestlocalrev -gt $latestrev ]
           then
-            echo "aktuelle lokale Version ist neuer als die Version auf dem Server - benutze lokale Version $latestlocalrev"
+            echo "aktuelle lokale Version ist neuer als die Version auf dem Server ($latestrev) - benutze lokale Version $latestlocalrev"
             latestrev=$latestlocalrev
           else
             echo "lokale Version $latestlocalrev ist bereits aktuell"
