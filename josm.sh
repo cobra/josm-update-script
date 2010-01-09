@@ -110,8 +110,8 @@ if [ $override_rev -eq 1 ]
     # download current revision of josm if newest local revision is older than the current revision of josm on the server
     if [ $latestrev -eq 0 ]
       then
-        echo "working offline, using latest local version..."
-        latestrev=$oldestrev
+        echo "working offline, using latest local version $latestlocalrev..."
+        latestrev=$latestlocalrev
       else
       if [ $latestlocalrev -lt $latestrev ]
         then
@@ -137,4 +137,5 @@ fi
 cd $OLDPWD
 echo "starting josm..."
 aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ &
+echo "josm started with PID $!"
 
