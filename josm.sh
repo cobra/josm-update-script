@@ -15,15 +15,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 #
+# homepage and wiki for this script: http://github.com/cobra/josm-update-script http://wiki.github.com/cobra/josm-update-script
+#
 # Startup-script for josm:
 #   - gets always the newest version of josm-latest.jar or josm-tested.jar (configurable)
 #   - backs up old versions (useful when the new one doesn't work properly)
 #   - is able to launch an old version of josm (via josm -r [revision])
 #   - passes all arguments to josm - you can pass files to open with josm, e.g. 'josm trace0*.gpx trace10.gpx'
 #   - sets environment variables, passes correct parameters to java and use alsa instead of oss
+#   - writes a log to ~/.josm/josm.log
 #
 # configuration (in file josm.conf):
 #   - change archive-directory if desired
+#   - select josm variant(latest/tested)
 #   - adjust number of desired backups
 #   - do you use compiz? Then uncomment that line.
 #   - adjust amount of RAM available to josm
@@ -35,12 +39,6 @@
 #   Options:
 #   -l	lists all saved versions of josm and exits
 #   -r	start this revision of josm, revision is either an absolute number or "last" for next to last saved version
-#
-# ToDo: 
-#   - add possibility to configure a proxy and to select a certain version of java
-#   - detect automatically if compiz is running
-#   - detect if aoss is available, if not, return warning and start without it
-#   - add some help (e.g. via --help)
 #
 
 # include configuration file
@@ -133,9 +131,9 @@ if [ $override_rev -eq 1 ]
     fi
 fi
 
-# start josm: use alsa instead of oss, enable 2D-acceleration, set maximum amount of memory used for josm to 1024MB and pass all arguments to josm:
+# start josm: use alsa instead of oss, enable 2D-acceleration, set maximum memory for josm, pass all arguments to josm and write a log:
 cd $OLDPWD
 echo "starting josm..."
-aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ &
+aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ >~/.josm/josm.log 2>&1 &
 echo "josm started with PID $!"
 

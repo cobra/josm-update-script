@@ -15,12 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 #
-# Startup-script for josm:
+# homepage und wiki für dieses script: http://github.com/cobra/josm-update-script http://wiki.github.com/cobra/josm-update-script
+#
+# Startup-script für josm:
 #   - aktualisiert josm falls nötig auf die aktuelle Version von latest oder tested (einstellbar)
 #   - sichert alte Versionen (sehr hilfreich, wenn die neue Version nicht funktioniert wie gewünscht)
 #   - erlaubt es, eine alte Version zu starten (per josm -r [revision])
 #   - übergibt alle Argumente an JOSM, nützlich um einen oder mehrere Dateien direkt in JOSM zu öffnen
 #   - setzt Umgebungsvariablen, übergibt die passenden Parameter an Java und sorgt dafür, dass alsa benutzt wird
+#   - schreibt eine Logdatei nach ~/.josm/josm.log
 #
 # Konfiguration (in der Datei josm-de.conf):
 #   - Verzeichnis für die gespeicherten josm-Versionen anpassen, falls gewünscht
@@ -36,14 +39,6 @@
 #   Optionem:
 #   -l	alle gespeicherten josm-Versionen ausgeben und beenden
 #   -r	die angegebene Version von josm starten, als Argument entweder eine (lokal vorhandene) Revisionsnummer angeben oder "last" für die vorletzte gespeicherte
-#
-# ToDo: 
-#   - add possibility to configure a proxy and to select a certain version of java
-#   - add possibility to select an older revision and run it
-#   - add possibility to select -tested instead of -latest revision
-#   - detect automatically if compiz is running
-#   - detect if aoss is available, if not, return warning and start without it
-#   - add some help (e.g. via --help)
 #
  
 # Konfigurationsdatei einbinden
@@ -136,9 +131,9 @@ if [ $override_rev -eq 1 ]
     fi
 fi
  
-# start josm: use alsa instead of oss, enable 2D-acceleration, set maximum amount of memory used for josm to 1024MB and pass all arguments to josm:
+# start josm: use alsa instead of oss, enable 2D-acceleration, set maximum memory for josm, pass all arguments to josm and write a log:
 cd $OLDPWD
 echo "starte josm..."
-aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ &
+aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ >~/.josm/josm.log 2>&1 &
 echo "josm wurde mit mit PID $! gestartet"
 
