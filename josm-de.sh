@@ -34,31 +34,36 @@
 #   - Wer andere Parameter für java oder josm ändern möchte, kann das in der letzten Zeile tun
 #
 # Benutzung:
-#   josm-de.sh [-lr] [revision] [DATEI(EN)]
+#   josm-de.sh [-hlru] [revision] [DATEI(EN)]
 #
 #   Optionem:
+#   -h  Hilfetext ausgeben
 #   -l	alle gespeicherten josm-Versionen ausgeben und beenden
 #   -r	die angegebene Version von josm starten, als Argument entweder eine (lokal vorhandene) Revisionsnummer angeben oder "last" für die vorletzte gespeicherte
+#   -u  nur aktualisieren, josm nicht starten
 #
  
 # Konfigurationsdatei einbinden
 . josm-de.conf
+usage="Benutzung: `basename $0` [-h] [-l] [-r revision] [-u] [Dateien]"
  
 cd $dir
  
 # parse arguments
-set -- `getopt "hlr:" "$@"` || {
-      echo "Benutzung: `basename $0` [-h] [-l] [-r revision] [Dateien]" 1>&2
+set -- `getopt "hlr:u" "$@"` || {
+      echo  1>&2
       exit 1
 }
 override_rev=0
 latestrev=-1
+update=0
 while :
 do
       case "$1" in
-           -h) echo "Benutzung: `basename $0` [-h] [-l] [-r revision] [Dateien]"; exit 0 ;;
+           -h) echo $usage; exit 0 ;;
            -l) echo "Verfügbare josm-Versionen: "; ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 ; exit 0 ;;
            -r) shift; override_rev=1; latestrev="$1" ;;
+           -u) update=1;;
            --) break ;;
       esac
       shift
@@ -132,8 +137,10 @@ if [ $override_rev -eq 1 ]
 fi
  
 # start josm: use alsa instead of oss, enable 2D-acceleration, set maximum memory for josm, pass all arguments to josm and write a log:
-cd $OLDPWD
-echo "starte josm..."
-aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ >~/.josm/josm.log 2>&1 &
-echo "josm wurde mit mit PID $! gestartet"
-
+if [ $update -eq 0 ]
+  then
+    cd $OLDPWD
+    echo "starte josm..."
+    aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ >~/.josm/josm.log 2>&1 &
+    echo "josm wurde mit mit PID $! gestartet"
+fi
