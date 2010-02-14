@@ -34,36 +34,39 @@
 #   - if you want to change or add some parameters for java look at the last line
 #
 # usage:
-#   josm.sh [-hlru] [revision] [FILE(S)]
+#   josm.sh [-hlqru] [revision] [FILE(S)]
 #
 #   Options:
 #   -h  displays a help text
 #   -l	lists all saved versions of josm and exits
+#   -q  suppresses the output of josm's stdout and stderr but still writes the log
 #   -r	starts this revision of josm, revision is either an absolute number or "last" for next to last saved version
 #   -u  update without starting josm
 #
 
 # include configuration file
 . josm.conf
-usage="Usage: `basename $0` [-h] [-l] [-r revision] [-u] [files]"
+usage="Usage: `basename $0` [-h] [-l] [-q] [-r revision] [-u] [files]"
 
 cd $dir
 
 # parse arguments
-set -- `getopt "hlr:u" "$@"` || {
+set -- `getopt "hlqr:u" "$@"` || {
       echo $usage 1>&2
       exit 1
 }
 override_rev=0
 latestrev=-1
 update=0
+bequiet=0
 while :
 do
       case "$1" in
            -h) echo $usage; exit 0 ;;
            -l) echo "available revisions of josm: "; ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 ; exit 0 ;;
+           -q) bequiet=1 ;;
            -r) shift; override_rev=1; latestrev="$1" ;;
-           -u) update=1;;
+           -u) update=1 ;;
            --) break ;;
       esac
       shift
@@ -141,6 +144,11 @@ if [ $update -eq 0 ]
   then
     cd $OLDPWD
     echo "starting josm..."
-    aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ >~/.josm/josm.log 2>&1 &
+    if [ $bequiet -eq 0 ]
+      then
+        aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ 2>&1 | tee ~/.josm/josm.log &
+      else
+        aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ >~/.josm/josm.log 2>&1 &
+    fi
     echo "josm started with PID $!"
 fi
