@@ -34,121 +34,191 @@
 #   - Wer andere Parameter für java oder josm ändern möchte, kann das in der letzten Zeile tun
 #
 # Benutzung:
-#   josm-de.sh [-hlru] [revision] [DATEI(EN)]
+#   josm.sh [-hloqu] [-r revision] [-v version] [DATEI(EN)]
 #
-#   Optionem:
-#   -h  Hilfetext ausgeben
-#   -l	alle gespeicherten josm-Versionen ausgeben und beenden
-#   -q  unterdrückt die Ausgabe von josms stdout und stderr, schreibt nur die Logdatei
-#   -r	die angegebene Version von josm starten, als Argument entweder eine (lokal vorhandene) Revisionsnummer angeben oder "last" für die vorletzte gespeicherte
-#   -u  nur aktualisieren, josm nicht starten
+#   Optionen:
+#   -h  gibt einen Hilfetext aus
+#   -l	zeigt alle verfügbaren Revisionen von josm an, josm wird nicht gestartet
+#   -o  arbeitet offline ohne update-Versuch
+#   -q  unterdrückt josms Ausgabe auf das Terminal, schreibt nur die Logdatei
+#   -r	startet die angegebene Version von josm, als Argument entweder eine (lokal vorhandene) Revisionsnummer angeben oder "last" für die vorletzte gespeicherte
+#   -u  aktualisiert josm ohne es zu starten
+#   -v  startet statt der konfigurierten Version von josm die hier angegebene (kann "latest" oder "tested" sein)
 #
- 
-# Konfigurationsdatei einbinden
-. josm-de.conf
-usage="Benutzung: `basename $0` [-h] [-l] [-q] [-r revision] [-u] [Dateien]"
- 
-cd $dir
- 
-# parse arguments
-set -- `getopt "hlqr:u" "$@"` || {
-      echo  1>&2
-      exit 1
-}
+
+# include configuration file
+. ./josm.conf
+usage="Benutzung: `basename $0` [-h] [-l] [-o] [-q] [-r Revision] [-u] [-v Version] [Dateien]"
+# global variables
+rev_tested=0
+rev_tested=0
+rev_nightly=0
+rev_local=0
+# flags
 override_rev=0
-latestrev=-1
 update=0
 bequiet=0
-while :
-do
-      case "$1" in
-           -h) echo $usage; exit 0 ;;
-           -l) echo "Verfügbare josm-Versionen: "; ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 ; exit 0 ;;
-           -q) bequiet=1 ;;
-           -r) shift; override_rev=1; latestrev="$1" ;;
-           -u) update=1 ;;
-           --) break ;;
-      esac
-      shift
-done
-shift
- 
-# parse special revision argument "last" for using next to last revision
-if [ $override_rev -eq 1 -a $latestrev = last ]
-  then
-    latestrev=`ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 | tail -n 2 | head -n 1`
-fi
- 
+offline=0
+
+
 # if $dir doesn't exist, create it (initial setup):
 if [ -d $dir ]; then :
   else mkdir -p $dir; echo "Verzeichnis $dir existiert nicht; wird angelegt..."
 fi
- 
-# get revision number of newest local version:
-if ls josm-*.jar > /dev/null;
-  then latestlocalrev=`ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 | tail -n 1`
-  else latestlocalrev=0
+
+cd $dir
+
+checkrev() {
+	# parameter: revision to check
+	# returns: 0 if revision is present
+	if ls $dir/josm*.jar | grep $1 >/dev/null; then
+		return 0
+	else return 1
+	fi
+}
+
+getbuildrev() {
+	# reads revisions of josm
+	# parameter: version to check, either "latest" or "tested"
+	# returns: revision of given version, 0 when connection timed out
+	if [ $offline -eq 0 ]; then
+		wget -qO /tmp/josm-version --tries=$retries --timeout=$timeout http://josm.openstreetmap.de/version
+		if [ $? -ne 0 ]; then
+			offline=1
+			echo "Konnte aktuelle Version nicht vom Server lesen, wechsle in Offline-Modus" >&2
+			return 1
+		fi
+		rev_latest=`grep latest /tmp/josm-version | awk '{print $2}'`
+		rev_tested=`grep tested /tmp/josm-version | awk '{print $2}'`
+		rev_nightly=`grep $1 /tmp/josm-version | awk '{print $2}'`
+		return 0
+	else return 1
+	fi
+}
+
+getlocalrev() {
+	# parameter: none
+	# returns: the newest local revision
+	if ls $dir/josm-*.jar > /dev/null; then
+		rev_local=`ls $dir/josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 | tail -n 1`
+		return 0
+	else return 1
+	fi
+}
+
+update() {
+	# parameter: $1: version to update, either "latest" or "tested"; $2: revision
+	# returns: 0 for successful update, 1 for failed update
+	if [ $offline -eq 0 ]; then
+		echo "lade josm-$version, revision $2 herunter..."
+		wget -O $dir/josm-$2.jar -N http://josm.openstreetmap.de/download/josm-$1.jar
+		return $?
+	else return 1
+	fi
+}
+
+# parse arguments
+set -- `getopt "hloqr:uv:" "$@"` || {
+	echo $usage 1>&2
+	exit 1
+}
+
+while :
+	do
+		case "$1" in
+			-h) echo $usage; exit 0 ;;
+			-l) echo "Verfügbare josm-Versionen: "; ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 ; exit 0 ;;
+			-o) offline=1 ;;
+			-q) bequiet=1 ;;
+			-r) shift; override_rev=1; rev="$1" ;;
+			-u) update=1 ;;
+			-v) shift; version="$1" ;;
+			--) break ;;
+		esac
+		shift
+	done
+shift
+
+### -u: update
+if [ $update -eq 1 ]; then
+	if [ $offline -eq 0 ]; then
+		getbuildrev $version
+		if checkrev $rev_nightly; then
+			echo "josm-$version revision $rev_nightly ist aktuell"
+			exit 0
+		else
+			echo "josm-$version revision $rev_nightly ist verfügbar, aktualisieren..."
+			update $version $rev_nightly
+			exit 0
+		fi
+	else
+		echo "offline - keine Aktualisierung möglich. Ende"
+		exit 1
+	fi
+
+
+### -r: start specified revision
+elif [ $override_rev -eq 1 ]; then
+	if [ $rev = last ]; then
+		rev=`ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 | tail -n 2 | head -n 1`
+	fi
+	if checkrev $rev; then
+		echo "Erzwinge Benutzung von Version $rev"
+	else
+		echo "Revision $rev konnte nicht gefunden werden! `basename $0` -l zeigt eine Liste der verfügbaren Versionen. Ende."
+		exit 1
+	fi
+
+### normal start and update - tested
+elif [ $version = tested ]; then
+	getbuildrev $version
+	if checkrev $rev_nightly; then
+		echo "Lokale Revision $rev_nightly ist aktuell"
+		rev=$rev_nightly
+	else
+		echo "Lokale Revision ist $rev_local, neueste verfügbare Revision ist $rev_nightly - starte Download von josm-$version..."
+		update $version $rev_nightly
+		rev=$rev_nightly
+	fi
+
+### normal start and update - latest
+else
+	getlocalrev
+	getbuildrev $version
+	if [ $rev_local -ge $rev_nightly ]; then
+		echo "Lokale Revision ist $rev_local, neueste verfügbare Revision ist $rev_nightly - benutze lokale Revision $rev_local"
+		rev=$rev_local
+	else
+		echo "Lokale Revision ist $rev_local, neueste verfügbare Revision ist $rev_nightly - starte Download von josm-$version..."
+		update $version $rev_nightly
+		rev=$rev_local
+	fi
 fi
- 
-# get revision number of backed up versions
-oldestrev=`ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 | head -n 1`
- 
-# count backed up versions
-numsaved=`ls josm*.jar | grep -c ''`
- 
-if [ $override_rev -eq 1 ]
-  # check if desired revision is available:
-  then
-    if ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 | grep $latestrev
-      then
-        echo "Erzwinge Benutzung von Version $latestrev"
-      else
-        echo "Revision $latestrev konnte nicht gefunden werden! `basename $0` -l zeigt eine Liste der verfügbaren Versionen. Ende."
-        exit 1
-    fi
-  else
-    # get revision number of desired version
-    latestrev=`wget -qO - --tries=$retries --timeout=$timeout http://josm.openstreetmap.de/version | grep $version | cut -d ' ' -f 2`
-    if [ ${latestrev:=0} -eq 0 ]
-      then echo "Konnte aktuelle Version nicht vom Server lesen, wechsle in Offline-Modus"
-    fi
- 
-    # download current revision of josm if newest local revision is older than the current revision of josm on the server
-    if [ $latestrev -eq 0 ]
-      then
-        echo "Offline-Modus, benutze letzte aktuelle Version $latestlocalrev"
-        latestrev=$latestlocalrev
-      else
-      if [ $latestlocalrev -lt $latestrev ]
-        then
-          echo "aktuelle lokale Version ist $latestlocalrev, neueste verfügbare Version ist $latestrev - starte download..."
-          wget -O $dir/josm-$latestrev.jar -N http://josm.openstreetmap.de/download/josm-$version.jar
-          # delete oldest file if enough newer ones are present
-          if [ $numsaved -gt $numbackup ]
-            then rm $dir/josm-$oldestrev.jar
-          fi
-        else
-        if [ $latestlocalrev -gt $latestrev ]
-          then
-            echo "aktuelle lokale Version ist neuer als die Version auf dem Server ($latestrev) - benutze lokale Version $latestlocalrev"
-            latestrev=$latestlocalrev
-          else
-            echo "lokale Version $latestlocalrev ist bereits aktuell"
-        fi
-      fi
-    fi
+
+### cleanup
+if [ $offline -eq 0 ]; then
+	i=1
+	while [ `ls josm*.jar | grep -c ''` -gt $numbackup ]; do
+		oldestrev=`ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 | head -n $i | tail -n 1`
+		# don't delete current tested
+		if [ $oldestrev -ne $rev_tested ]; then
+			echo "Lösche josm Revision $oldestrev"
+			rm $dir/josm-$oldestrev.jar
+		else i=`expr $i + 1`
+		fi
+		if [ `expr $i + 1` -eq  $numbackup ]; then
+			echo "Fehler beim Aufräumen - \$numbackup ist zu niedrig."
+			break;
+		fi
+	done
 fi
- 
+
 # start josm: use alsa instead of oss, enable 2D-acceleration, set maximum memory for josm, pass all arguments to josm and write a log:
-if [ $update -eq 0 ]
-  then
-    cd $OLDPWD
-    echo "starte josm..."
-    if [ $bequiet -eq 0 ]
-      then
-        aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ 2>&1 | tee ~/.josm/josm.log &
-      else
-        aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$latestrev.jar $@ >~/.josm/josm.log 2>&1 &
-    fi
-    echo "josm wurde mit mit PID $! gestartet"
-fi
+	cd $OLDPWD
+	echo "starte josm..."
+	if [ $bequiet -eq 0 ]
+		then aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$rev.jar $@ 2>&1 | tee ~/.josm/josm.log &
+		else aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$rev.jar $@ >~/.josm/josm.log 2>&1 &
+	fi
+	echo "josm wurde mit mit Prozess-ID $! gestartet"
+
