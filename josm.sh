@@ -47,7 +47,7 @@
 #
 
 # include configuration file
-. ./josm.conf
+. josm.conf
 usage="Usage: `basename $0` [-h] [-l] [-o] [-q] [-r revision] [-u] [-v version] [files]"
 # global variables
 rev_tested=0
@@ -71,7 +71,7 @@ cd $dir
 checkrev() {
 	# parameter: revision to check
 	# returns: 0 if revision is present
-	if ls $dir/josm*.jar | grep $1 >/dev/null; then
+	if ls josm*.jar | grep $1 >/dev/null; then
 		return 0
 	else return 1
 	fi
@@ -99,8 +99,8 @@ getbuildrev() {
 getlocalrev() {
 	# parameter: none
 	# returns: the newest local revision
-	if ls $dir/josm-*.jar > /dev/null; then
-		rev_local=`ls $dir/josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 | tail -n 1`
+	if ls josm-*.jar > /dev/null; then
+		rev_local=`ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 | tail -n 1`
 		return 0
 	else return 1
 	fi
@@ -111,7 +111,7 @@ update() {
 	# returns: 0 for successful update, 1 for failed update
 	if [ $offline -eq 0 ]; then
 		echo "downloading josm-$version, revision $2..."
-		wget -O $dir/josm-$2.jar -N http://josm.openstreetmap.de/download/josm-$1.jar
+		wget -O josm-$2.jar -N http://josm.openstreetmap.de/download/josm-$1.jar
 		return $?
 	else return 1
 	fi
@@ -203,7 +203,7 @@ if [ $offline -eq 0 ]; then
 		# don't delete current tested
 		if [ $oldestrev -ne $rev_tested ]; then
 			echo "deleting josm revision $oldestrev"
-			rm $dir/josm-$oldestrev.jar
+			rm josm-$oldestrev.jar
 		else i=`expr $i + 1`
 		fi
 		if [ `expr $i + 1` -eq  $numbackup ]; then
