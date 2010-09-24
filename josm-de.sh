@@ -191,7 +191,7 @@ else
 	else
 		echo "Lokale Revision ist $rev_local, neueste verfügbare Revision ist $rev_nightly - starte Download von josm-$version..."
 		update $version $rev_nightly
-		rev=$rev_local
+		rev=$rev_nightly
 	fi
 fi
 
