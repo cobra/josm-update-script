@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2009 "Cobra" from <http://www.openstreetmap.org>
+# Copyright (C) 2011 "Cobra" from <http://www.openstreetmap.org>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -216,9 +216,11 @@ fi
 # start josm: use alsa instead of oss, enable 2D-acceleration, set maximum memory for josm, pass all arguments to josm and write a log:
 	cd $OLDPWD
 	echo "starting josm..."
-	if [ $bequiet -eq 0 ]
-		then aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$rev.jar $@ 2>&1 | tee ~/.josm/josm.log &
-		else aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$rev.jar $@ >~/.josm/josm.log 2>&1 &
-	fi
+	aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$rev.jar $@ >~/.josm/josm.log 2>&1 &
+	
 	echo "josm started with PID $!"
+
+	if [ $bequiet -eq 0 ]
+		then tail -f ~/.josm/josm.log
+	fi
 
