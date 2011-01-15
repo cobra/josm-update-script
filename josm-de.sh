@@ -216,7 +216,7 @@ fi
 # start josm: use alsa instead of oss, enable 2D-acceleration, set maximum memory for josm, pass all arguments to josm and write a log:
 	cd $OLDPWD
 	echo "starte josm..."
-	aoss java -jar -Xmx$mem -Dsun.java2d.opengl=true $dir/josm-$rev.jar $@ >~/.josm/josm.log 2>&1 &
+	aoss java -jar -Xmx$mem -Dsun.java2d.opengl=$useopengl $dir/josm-$rev.jar $@ >~/.josm/josm.log 2>&1 &
 	
 	echo "josm wurde mit mit Prozess-ID $! gestartet"
 
