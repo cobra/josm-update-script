@@ -42,23 +42,26 @@
 #   -o  arbeitet offline ohne update-Versuch
 #   -q  unterdrückt josms Ausgabe auf das Terminal, schreibt nur die Logdatei
 #   -r	startet die angegebene Version von josm, als Argument entweder eine (lokal vorhandene) Revisionsnummer angeben oder "last" für die vorletzte gespeicherte
+#   -s  aktuelle Revision aus dem SVN laden und kompilieren. Kann mit -u und -r kombiniert werden. svn und ant müssen dafür installiert sein.
 #   -u  aktualisiert josm ohne es zu starten
 #   -v  startet statt der konfigurierten Version von josm die hier angegebene (kann "latest" oder "tested" sein)
 #
 
 # include configuration file
-. josm.conf
+. ./josm.conf
 usage="Benutzung: `basename $0` [-h] [-l] [-o] [-q] [-r Revision] [-u] [-v Version] [Dateien]"
 # global variables
 rev_tested=0
 rev_tested=0
 rev_nightly=0
 rev_local=0
+rev_svn=0
 # flags
 override_rev=0
 update=0
 bequiet=0
 offline=0
+svn=0
 
 
 # if $dir doesn't exist, create it (initial setup):
@@ -69,9 +72,10 @@ fi
 cd $dir
 
 checkrev() {
+	# checks archive for certain revision
 	# parameter: revision to check
 	# returns: 0 if revision is present
-	if ls josm*.jar | grep $1 >/dev/null; then
+	if ls $dir/josm*.jar | grep $1 >/dev/null; then
 		return 0
 	else return 1
 	fi
@@ -118,7 +122,7 @@ update() {
 }
 
 # parse arguments
-set -- `getopt "hloqr:uv:" "$@"` || {
+set -- `getopt "hloqr:suv:" "$@"` || {
 	echo $usage 1>&2
 	exit 1
 }
@@ -131,6 +135,7 @@ while :
 			-o) offline=1 ;;
 			-q) bequiet=1 ;;
 			-r) shift; override_rev=1; rev="$1" ;;
+			-s) svn=1 ;;
 			-u) update=1 ;;
 			-v) shift; version="$1" ;;
 			--) break ;;
@@ -139,8 +144,82 @@ while :
 	done
 shift
 
+### -s: use svn
+if [ $svn -eq 1 ]; then
+	if [ $offline -eq 1 ]; then
+		echo "Kein Zugriff auf das svn im offline-Modus. Ende."
+		exit 1
+	fi
+	if ! svn --version > /dev/null ; then
+		echo "svn konnte nicht gefunden werden. Bitte zuerst svn installieren."
+		exit 1
+	fi
+	if ! ant -version > /dev/null ; then
+		echo "ant konnte nicht gefunden weredn. Bitte zuerst ant installieren."
+		exit 1
+	fi
+
+	if [ $override_rev -eq 1 ]; then
+		#checkout specific revision
+		echo "Revision $rev wird ausgecheckt..."
+		svn co -r $rev http://josm.openstreetmap.de/svn/trunk $svndir
+		if [ $? -eq 1 ]; then
+			echo "Auschecken fehlgeschlagen. Ende."
+			exit 1
+		fi
+		cd $svndir
+	else
+		# checkout latest svn revision
+		if [ -d $svndir ]; then
+			cd $svndir
+			echo "svn-Repository auf Updates prüfen..."
+			svn up
+			if [ $? -eq 1 ]; then
+				echo "svn-Update fehlgeschlagen. Ende."
+				exit 1
+			fi
+		else
+			echo "Lokale Arbeitskopie existiert nicht, auschecken..."
+			svn co http://josm.openstreetmap.de/svn/trunk $svndir
+			if [ $? -eq 1 ]; then
+				echo "Auschecken fehlgeschlagen. Ende."
+				exit 1
+			fi
+			cd $svndir
+		fi
+	fi
+
+	# get revision, check against existing binaries
+	rev_svn=`svn info | grep Revision | cut -d ' ' -f 2`
+
+	if checkrev $rev_svn; then
+		# no changes, use existing binary
+		echo "Revision $rev_svn ist bereits vorhanden, Kompilieren wird übersprungen."
+		rev=$rev_svn	
+	else
+		# build josm, move to archive; you can add any options fo ant here if you need them
+		echo "Versuche, Revision $rev_svn zu kompilieren..."
+		ant
+		if [ $? -eq 0 ]; then
+			echo "Kompilieren von Revision $rev_svn aus dem SVN erfolgreich"
+			cp $svndir/dist/josm-custom.jar $dir/josm-$rev_svn.jar
+			rev=$rev_svn
+		else
+			echo "Kompilieren fehlgeschlagen, Ende."
+			exit 1
+		fi
+	fi
+
+	# terminate if -u is set as well
+	if [ $update -eq 1 ]; then
+		echo "Update aus svn ist vollständig, Ende."
+		exit 0;
+	else
+		cd $dir
+	fi
+
 ### -u: update
-if [ $update -eq 1 ]; then
+elif [ $update -eq 1 ]; then
 	if [ $offline -eq 0 ]; then
 		getbuildrev $version
 		if checkrev $rev_nightly; then
