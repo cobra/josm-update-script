@@ -48,7 +48,7 @@
 #
 
 # include configuration file
-. ./josm.conf
+. `dirname $0`/josm.conf
 usage="Usage: `basename $0` [-h] [-l] [-o] [-q] [-r revision] [-s] [-u] [-v version] [files]"
 # global variables
 rev_tested=0
