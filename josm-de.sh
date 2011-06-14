@@ -63,7 +63,6 @@ bequiet=0
 offline=0
 svn=0
 
-
 # if $dir doesn't exist, create it (initial setup):
 if [ -d $dir ]; then :
   else mkdir -p $dir; echo "Verzeichnis $dir existiert nicht; wird angelegt..."
@@ -303,9 +302,17 @@ fi
 		java -jar -Xmx$mem -Dsun.java2d.opengl=$useopengl $dir/josm-$rev.jar $@ >~/.josm/josm.log 2>&1 &
 	fi
 
+	josmpid=$!
+
 	echo "josm wurde mit mit Prozess-ID $! gestartet"
 
 	if [ $bequiet -eq 0 ]
-		then tail -f ~/.josm/josm.log
+		then tail -f ~/.josm/josm.log &
+		tailpid=$!
 	fi
 
+	wait $josmpid
+	if [ $bequiet -eq 0 ]
+		then kill $tailpid
+	fi
+	echo "josm wurde beendet"

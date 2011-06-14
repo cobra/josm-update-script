@@ -302,9 +302,17 @@ fi
 		java -jar -Xmx$mem -Dsun.java2d.opengl=$useopengl $dir/josm-$rev.jar $@ >~/.josm/josm.log 2>&1 &
 	fi
 	
-	echo "josm started with PID $!"
+	josmpid=$!
+
+	echo "josm started with PID $josmpid"
 
 	if [ $bequiet -eq 0 ]
-		then tail -f ~/.josm/josm.log
+		then tail -f ~/.josm/josm.log &
+		tailpid=$!
 	fi
 
+	wait $josmpid
+	if [ $bequiet -eq 0 ]
+		then kill $tailpid
+	fi
+	echo "josm terminated"
