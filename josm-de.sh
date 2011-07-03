@@ -67,6 +67,9 @@ svn=0
 if [ -d $dir ]; then :
   else mkdir -p $dir; echo "Verzeichnis $dir existiert nicht; wird angelegt..."
 fi
+if [ -d ~/.josm ]; then :
+	else mkdir ~/.josm; echo "Verzeichnis ~/.josm existiert nicht; wird angelegt..."
+fi
 
 cd $dir
 
