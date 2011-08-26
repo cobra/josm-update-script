@@ -123,6 +123,17 @@ update() {
 	fi
 }
 
+terminate() {
+	# terminates this script, tail and josm
+	echo "terminating... please wait"
+	kill -TERM $josmpid
+	if [ $bequiet -eq 0 ]
+		then kill $tailpid
+	fi
+}
+
+trap terminate SIGINT SIGTERM
+
 # parse arguments
 set -- `getopt "hloqr:suv:" "$@"` || {
 	echo $usage 1>&2
