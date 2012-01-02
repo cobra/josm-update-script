@@ -58,6 +58,7 @@ rev_local=0
 rev_svn=0
 # flags
 override_rev=0
+override_jar=0
 update=0
 bequiet=0
 offline=0
@@ -293,7 +294,7 @@ else
 fi
 
 ### cleanup
-if [ ${offline:-0} -eq 0 -a ${override_jar:-0} -eq 0 ]; then
+if [ $offline -eq 0 -a $override_jar -eq 0 ]; then
 	i=1
 	while [ `ls josm*.jar | grep -c ''` -gt $numbackup ]; do
 		oldestrev=`ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 | head -n $i | tail -n 1`
