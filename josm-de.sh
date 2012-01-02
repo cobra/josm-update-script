@@ -135,7 +135,7 @@ terminate() {
 trap terminate SIGINT SIGTERM
 
 # parse arguments
-set -- `getopt "hloqr:suv:" "$@"` || {
+set -- `getopt "hj:loqr:suv:" "$@"` || {
 	echo $usage 1>&2
 	exit 1
 }
@@ -144,6 +144,7 @@ while :
 	do
 		case "$1" in
 			-h) echo $usage; exit 0 ;;
+			-j) shift; override_jar=1; jarfile="$1" ;;
 			-l) echo "Verfügbare josm-Versionen: "; ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 ; exit 0 ;;
 			-o) offline=1 ;;
 			-q) bequiet=1 ;;
@@ -273,6 +274,10 @@ elif [ $version = tested ]; then
 		rev=$rev_nightly
 	fi
 
+### override jar file
+elif [ $override_jar -eq 1 ]; then
+	echo "nutze manuell gewählte jar-Datei $jarfile"
+
 ### normal start and update - latest
 else
 	getlocalrev
@@ -288,7 +293,7 @@ else
 fi
 
 ### cleanup
-if [ $offline -eq 0 ]; then
+if [ ${offline:-0} -eq 0 -a ${override_jar:-0} -eq 0 ]; then
 	i=1
 	while [ `ls josm*.jar | grep -c ''` -gt $numbackup ]; do
 		oldestrev=`ls josm*.jar | cut -d '-' -f 2 | cut -d '.' -f 1 | head -n $i | tail -n 1`
@@ -308,12 +313,17 @@ fi
 # start josm: use alsa instead of oss, enable 2D-acceleration, set maximum memory for josm, pass all arguments to josm and write a log:
 	cd $OLDPWD
 	echo "starte josm..."
+
+	if [ $override_jar -ne 1 ]; then
+		jarfile="$dir/josm-$rev.jar"
+	fi
+
 	# use aoss only if it's installed
 	aoss > /dev/null 2>&1
 	if [ $? -eq 1 ]; then
-		aoss java -jar -Xmx$mem -Dsun.java2d.opengl=$useopengl $dir/josm-$rev.jar $@ >~/.josm/josm.log 2>&1 &
+		aoss java -jar -Xmx$mem -Dsun.java2d.opengl=$useopengl $jarfile $@ >~/.josm/josm.log 2>&1 &
 	else
-		java -jar -Xmx$mem -Dsun.java2d.opengl=$useopengl $dir/josm-$rev.jar $@ >~/.josm/josm.log 2>&1 &
+		java -jar -Xmx$mem -Dsun.java2d.opengl=$useopengl $jarfile $@ >~/.josm/josm.log 2>&1 &
 	fi
 
 	josmpid=$!
