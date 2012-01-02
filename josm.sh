@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2011 "Cobra" from <http://www.openstreetmap.org>
+# Copyright (C) 2012 "Cobra" from <http://www.openstreetmap.org>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@
 
 # include configuration file
 . `dirname $0`/josm.conf
-usage="Usage: `basename $0` [-h] [-l] [-o] [-q] [-r revision] [-s] [-u] [-v version] [files]"
+usage="Usage: `basename $0` [-h] [-j jar file] [-l] [-o] [-q] [-r revision] [-s] [-u] [-v version] [files]"
 # global variables
 rev_tested=0
 rev_tested=0
