@@ -95,9 +95,9 @@ getbuildrev() {
 			echo "could not get version from server, working in offline mode" >&2
 			return 1
 		fi
-		rev_latest=`grep latest /tmp/josm-version | awk '{print $2}'`
-		rev_tested=`grep tested /tmp/josm-version | awk '{print $2}'`
-		rev_nightly=`grep $1 /tmp/josm-version | awk '{print $2}'`
+		rev_latest=`grep latest /tmp/josm-version | cut -d ' ' -f 2`
+		rev_tested=`grep tested /tmp/josm-version | cut -d ' ' -f 2`
+		rev_nightly=`grep $1 /tmp/josm-version | cut -d ' ' -f 2`
 		return 0
 	else return 1
 	fi
@@ -118,7 +118,7 @@ update() {
 	# returns: 0 for successful update, 1 for failed update
 	if [ $offline -eq 0 ]; then
 		echo "downloading josm-$version, revision $2..."
-		wget -O josm-$2.jar -N http://josm.openstreetmap.de/download/josm-$1.jar
+		wget -O josm-$2.jar http://josm.openstreetmap.de/download/josm-$1.jar
 		return $?
 	else return 1
 	fi
