@@ -178,7 +178,7 @@ if [ $svn -eq 1 ]; then
 		#checkout specific revision
 		echo "Revision $rev wird ausgecheckt..."
 		svn co -r $rev http://josm.openstreetmap.de/svn/trunk $svndir
-		if [ $? -eq 1 ]; then
+		if [ $? -ne 0 ]; then
 			echo "Auschecken fehlgeschlagen. Ende."
 			exit 1
 		fi
@@ -189,14 +189,14 @@ if [ $svn -eq 1 ]; then
 			cd $svndir
 			echo "svn-Repository auf Updates prüfen..."
 			svn up
-			if [ $? -eq 1 ]; then
+			if [ $? -ne 0 ]; then
 				echo "svn-Update fehlgeschlagen. Ende."
 				exit 1
 			fi
 		else
 			echo "Lokale Arbeitskopie existiert nicht, auschecken..."
 			svn co http://josm.openstreetmap.de/svn/trunk $svndir
-			if [ $? -eq 1 ]; then
+			if [ $? -ne 0 ]; then
 				echo "Auschecken fehlgeschlagen. Ende."
 				exit 1
 			fi

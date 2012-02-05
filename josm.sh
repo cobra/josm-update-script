@@ -178,7 +178,7 @@ if [ $svn -eq 1 ]; then
 		#checkout specific revision
 		echo "checking out revision $rev..."
 		svn co -r $rev http://josm.openstreetmap.de/svn/trunk $svndir
-		if [ $? -eq 1 ]; then
+		if [ $? -ne 0 ]; then
 			echo "svn checkout failed. exiting."
 			exit 1
 		fi
@@ -189,14 +189,14 @@ if [ $svn -eq 1 ]; then
 			cd $svndir
 			echo "checking svn repository for updates..."
 			svn up
-			if [ $? -eq 1 ]; then
+			if [ $? -ne 0 ]; then
 				echo "svn update failed. exiting."
 				exit 1
 			fi
 		else
 			echo "local working copy does not exist, checking out..."
 			svn co http://josm.openstreetmap.de/svn/trunk $svndir
-			if [ $? -eq 1 ]; then
+			if [ $? -ne 0 ]; then
 				echo "svn checkout failed. exiting."
 				exit 1
 			fi
